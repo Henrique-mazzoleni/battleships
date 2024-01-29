@@ -27,18 +27,7 @@ class Board {
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     ];
-    this.playerGuesses = [
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ];
+    this.playerGuesses = [];
     this.boats = [];
     this.gameOver = false;
     this.guess = [];
@@ -46,6 +35,16 @@ class Board {
 
   start() {
     content.appendChild(this.canvas);
+
+    const firstDestroyer = new Ship('destroyer', 1);
+    const secondDestroyer = new Ship('destroyer', 2);
+    const battleShip = new Ship('battleship', 3);
+
+    this.boats.push(firstDestroyer);
+    this.boats.push(secondDestroyer);
+    this.boats.push(battleShip);
+
+    this.boats.forEach((boat) => myBoard.placeShip(boat));
   }
 
   drawBoard() {
@@ -93,9 +92,8 @@ class Board {
         }
       }
 
-      console.log(position);
       if (this.checkIfPositionIsFree(position)) {
-        position.forEach(([y, x]) => (this.grid[y][x] = 1));
+        position.forEach(([y, x]) => (this.grid[y][x] = ship.id));
         break;
       }
     }
@@ -129,26 +127,38 @@ class Board {
     }
   }
 
-  drawShip() {
-    this.ctx.fillStyle = 'black';
-    for (let i = 0; i < 10; i++) {
-      for (let j = 0; j < 10; j++) {
-        if (this.grid[i][j])
-          this.ctx.fillRect((j + 1) * 50, (i + 1) * 50, 50, 50);
-      }
-    }
-  }
+  drawGuess([y, x]) {
+    let boat;
+    if (this.grid[y][x]) {
+      this.alert('Hit!');
+      this.ctx.fillStyle = 'red';
 
-  drawGuesses() {
-    for (let i = 0; i < 10; i++) {
-      for (let j = 0; j < 10; j++) {
-        if (this.playerGuesses[i][j]) {
-          if (this.playerGuesses[i][j] === this.grid[i][j])
-            this.ctx.fillStyle = 'red';
-          else this.ctx.fillStyle = 'blue';
-          this.ctx.fillRect((j + 1) * 50, (i + 1) * 50, 50, 50);
-        }
-      }
+      boat = this.boats[this.grid[y][x] - 1];
+      boat.enterHit([y, x]);
+    } else {
+      this.alert('Miss!');
+      this.ctx.fillStyle = 'blue';
+    }
+    this.ctx.fillRect((x + 1) * 50, (y + 1) * 50, 50, 50);
+
+    if (boat?.checkIfSunk()) {
+      this.alert('Sink!');
+      this.ctx.strokeStyle = 'yellow';
+      this.ctx.lineWidth = 1.5;
+      this.ctx.beginPath();
+      boat.hits.forEach(([y, x]) => {
+        this.ctx.moveTo((x + 1) * 50, (y + 1) * 50);
+        this.ctx.lineTo((x + 2) * 50, (y + 2) * 50);
+        this.ctx.moveTo((x + 2) * 50, (y + 1) * 50);
+        this.ctx.lineTo((x + 1) * 50, (y + 2) * 50);
+      });
+      this.ctx.stroke();
+    }
+    this.ctx.closePath();
+    if (this.checkEndGame()) {
+      this.alert('');
+      this.gameOverScreen();
+      this.gameOver = true;
     }
   }
 
@@ -157,8 +167,8 @@ class Board {
   }
 
   guessEntry(input) {
-    this.alert('');
     if (this.guess.length === 0) {
+      this.alert('');
       if (Object.keys(this.validInputs).includes(input)) {
         this.ctx.font = '30px Arial';
         this.ctx.fillStyle = 'black';
@@ -170,6 +180,7 @@ class Board {
     } else {
       if (!isNaN(Number(input))) {
         this.guess.push(Number(input));
+        this.ctx.fillText(input.toUpperCase(), 622, 100);
         this.insertGuess();
       } else {
         this.alert('Invalid Input');
@@ -179,8 +190,8 @@ class Board {
   }
 
   insertGuess() {
-    this.playerGuesses[this.guess[1]][this.guess[0]] = 1;
-    this.drawGuesses();
+    this.playerGuesses.push(this.guess);
+    this.drawGuess(this.guess.reverse());
   }
 
   alert(alert) {
@@ -190,7 +201,20 @@ class Board {
     this.ctx.fillText(alert, 600, 100);
   }
 
-  checkHit(y, x) {
-    return this.grid[y][x] === 1;
+  gameOverScreen() {
+    this.ctx.font = '50px Arial';
+    this.ctx.fillStyle = 'purple';
+    this.ctx.fillRect(50, 50, 500, 500);
+    this.ctx.fillStyle = 'yellow';
+    this.ctx.fillText('Game Over!', 160, 200);
+    this.ctx.fillText('Congratulations!', 120, 270);
+    this.ctx.font = '35px Arial';
+    this.ctx.fillText('You sunk all the ships!', 130, 350);
+    this.ctx.font = '25px Arial';
+    this.ctx.fillText('Press F5 to play again.', 170, 450);
+  }
+
+  checkEndGame() {
+    return this.boats.every((boat) => boat.isSunk);
   }
 }
