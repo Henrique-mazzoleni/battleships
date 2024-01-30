@@ -1,4 +1,5 @@
 class Board {
+  // transforms the column input into valid coordinates
   validInputs = {
     a: 0,
     b: 1,
@@ -11,6 +12,16 @@ class Board {
     i: 8,
     j: 9,
   };
+
+  /*
+    class Board:
+      canvas: canvasElement
+      ctx: canvasContextElement
+      grid: number[][] *matrix represents the board and where the boats are positioned
+      boats: Ship[] *keeps track of the ship instances on the board
+      gameOver: boolean
+      guess: [x:coordinate, y:coordinate] *tracks the current player's guess
+  */
 
   constructor() {
     this.canvas = document.createElement('canvas');
@@ -27,12 +38,17 @@ class Board {
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     ];
-    this.playerGuesses = [];
+    // this.playerGuesses = [];
     this.boats = [];
     this.gameOver = false;
     this.guess = [];
   }
 
+  /*
+    start the board up:
+    - links the created canvas element to the dom
+    - creates the boats and places them on the grid
+  */
   start() {
     content.appendChild(this.canvas);
 
@@ -47,6 +63,7 @@ class Board {
     this.boats.forEach((boat) => myBoard.placeShip(boat));
   }
 
+  // draws the Board on the canvasElement
   drawBoard() {
     this.ctx.fillStyle = 'black';
     this.ctx.font = '30px Arial';
@@ -65,6 +82,12 @@ class Board {
     }
   }
 
+  /*
+    places the ship on the grid:
+      - starts off with a random x,y coordinate on the grid
+      - based on the starting point chooses a random possible direction that the boat can be placed
+      - checks if the position on the grid is not occupied
+  */
   placeShip(ship) {
     let placed = false;
     while (!placed) {
@@ -99,6 +122,7 @@ class Board {
     }
   }
 
+  // given the starting point and the ship size pics randomly a direction where the boat will fit on the grid
   pickShipDirection(position, shipSize) {
     if (position[1] < shipSize) {
       if (position[0] < shipSize) {
@@ -127,6 +151,13 @@ class Board {
     }
   }
 
+  /*
+    draws guess on the board:
+      - checks if hit: red mark - retrieves which boat has been hit
+        - if not: blue mark
+      - checks if boat has been sunk from hit and marks it with Xs
+        - if boat is sunk checks if game is over
+  */
   drawGuess([y, x]) {
     let boat;
     if (this.grid[y][x]) {
@@ -153,19 +184,27 @@ class Board {
         this.ctx.lineTo((x + 1) * 50, (y + 2) * 50);
       });
       this.ctx.stroke();
+      this.ctx.closePath();
+      if (this.checkEndGame()) {
+        this.alert('');
+        this.gameOverScreen();
+        this.gameOver = true;
     }
-    this.ctx.closePath();
-    if (this.checkEndGame()) {
-      this.alert('');
-      this.gameOverScreen();
-      this.gameOver = true;
     }
   }
 
+  // checks if coordinate is not occupied on grid
   checkIfPositionIsFree(position) {
     return position.every(([y, x]) => this.grid[y][x] === 0);
   }
 
+  /*
+    processes the keyboard input into a coordinate:
+    - checks if it is the first or second coordinate:
+      - if first coordinate checks if it is a valid input and transforms and logs the input in the current player guess
+      - if second coordinate checks if it is a number and logs it to the current player guess
+        - than sends the guess to the drawGuess method
+  */
   guessEntry(input) {
     if (this.guess.length === 0) {
       this.alert('');
@@ -181,7 +220,7 @@ class Board {
       if (!isNaN(Number(input))) {
         this.guess.push(Number(input));
         this.ctx.fillText(input.toUpperCase(), 622, 100);
-        this.insertGuess();
+        this.drawGuess(this.guess.reverse());
       } else {
         this.alert('Invalid Input');
       }
@@ -189,11 +228,12 @@ class Board {
     }
   }
 
-  insertGuess() {
-    this.playerGuesses.push(this.guess);
-    this.drawGuess(this.guess.reverse());
-  }
+  // insertGuess() {
+    // this.playerGuesses.push(this.guess);
+    // this.drawGuess(this.guess.reverse());
+  // }
 
+  // method draws an alert on the screen next to the board
   alert(alert) {
     this.ctx.font = '30px Arial';
     this.ctx.fillStyle = 'red';
@@ -201,6 +241,7 @@ class Board {
     this.ctx.fillText(alert, 600, 100);
   }
 
+  // draws a game over screen
   gameOverScreen() {
     this.ctx.font = '50px Arial';
     this.ctx.fillStyle = 'purple';
@@ -214,6 +255,7 @@ class Board {
     this.ctx.fillText('Press F5 to play again.', 170, 450);
   }
 
+  // checks if all boats have been sunk
   checkEndGame() {
     return this.boats.every((boat) => boat.isSunk);
   }
