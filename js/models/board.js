@@ -38,7 +38,6 @@ class Board {
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     ];
-    // this.playerGuesses = [];
     this.boats = [];
     this.gameOver = false;
     this.guess = [];
@@ -227,11 +226,6 @@ class Board {
       this.guess = [];
     }
   }
-
-  // insertGuess() {
-    // this.playerGuesses.push(this.guess);
-    // this.drawGuess(this.guess.reverse());
-  // }
 
   // method draws an alert on the screen next to the board
   alert(alert) {
